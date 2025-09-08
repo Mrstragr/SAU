@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../stores/authStore'
-import { mockVehicles, mockStudents, mockTrips } from '../data/mockData'
+import { useVehicles, useStudents, useTrips } from '../api/hooks'
 import { 
   Car, 
   Users, 
@@ -22,9 +22,16 @@ import toast from 'react-hot-toast'
 
 const AdminDashboard = () => {
   const { user } = useAuthStore()
-  const [vehicles, setVehicles] = useState(mockVehicles)
-  const [students, setStudents] = useState(mockStudents)
-  const [trips, setTrips] = useState(mockTrips)
+  const vehiclesQuery = useVehicles()
+  const studentsQuery = useStudents()
+  const tripsQuery = useTrips()
+  const [vehicles, setVehicles] = useState([])
+  const [students, setStudents] = useState([])
+  const [trips, setTrips] = useState([])
+  
+  useEffect(() => { if (vehiclesQuery.data) setVehicles(vehiclesQuery.data) }, [vehiclesQuery.data])
+  useEffect(() => { if (studentsQuery.data) setStudents(studentsQuery.data) }, [studentsQuery.data])
+  useEffect(() => { if (tripsQuery.data) setTrips(tripsQuery.data) }, [tripsQuery.data])
   const [selectedTab, setSelectedTab] = useState('overview')
 
   // Calculate statistics

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-import { mockVehicles, campusLocations } from '../data/mockData'
+import { useVehicles } from '../api/hooks'
 import { 
   Car, 
   MapPin, 
@@ -20,9 +20,17 @@ import toast from 'react-hot-toast'
 const StudentDashboard = () => {
   const { user } = useAuthStore()
   const navigate = useNavigate()
-  const [vehicles, setVehicles] = useState(mockVehicles)
+  const vehiclesQuery = useVehicles()
+  const [vehicles, setVehicles] = useState([])
   const [selectedVehicle, setSelectedVehicle] = useState(null)
   const [showMap, setShowMap] = useState(false)
+
+  // Seed local state from API
+  useEffect(() => {
+    if (vehiclesQuery.data) {
+      setVehicles(vehiclesQuery.data)
+    }
+  }, [vehiclesQuery.data])
 
   // Update vehicle status every 30 seconds (simulate real-time updates)
   useEffect(() => {

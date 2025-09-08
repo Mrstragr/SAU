@@ -1,0 +1,199 @@
+{
+  "vehicles": [
+    {
+      "id": "v1",
+      "vehicleNumber": "SAU-001",
+      "driver": {
+        "id": "d1",
+        "name": "Rajesh Kumar",
+        "phone": "+91 98765 43210",
+        "photo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+        "rating": 4.5,
+        "totalTrips": 1250,
+        "isActive": true
+      },
+      "capacity": 4,
+      "currentLocation": {
+        "lat": 28.6139,
+        "lng": 77.209,
+        "address": "Main Gate, SAU Campus"
+      },
+      "status": "waiting",
+      "currentPassengers": 0,
+      "totalTripsToday": 8,
+      "lastUpdated": "2024-01-15T14:30:00Z",
+      "isEcoFriendly": true,
+      "batteryLevel": 85
+    },
+    {
+      "id": "v2",
+      "vehicleNumber": "SAU-002",
+      "driver": {
+        "id": "d2",
+        "name": "Amit Singh",
+        "phone": "+91 98765 43211",
+        "photo": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+        "rating": 4.2,
+        "totalTrips": 980,
+        "isActive": true
+      },
+      "capacity": 4,
+      "currentLocation": {
+        "lat": 28.6145,
+        "lng": 77.2095,
+        "address": "Library Building, SAU Campus"
+      },
+      "status": "confirm",
+      "currentPassengers": 3,
+      "totalTripsToday": 6,
+      "lastUpdated": "2024-01-15T15:00:00Z",
+      "isEcoFriendly": true,
+      "batteryLevel": 92
+    },
+    {
+      "id": "v3",
+      "vehicleNumber": "SAU-003",
+      "driver": {
+        "id": "d3",
+        "name": "Priya Sharma",
+        "phone": "+91 98765 43212",
+        "photo": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+        "rating": 4.8,
+        "totalTrips": 1560,
+        "isActive": false
+      },
+      "capacity": 4,
+      "currentLocation": {
+        "lat": 28.614,
+        "lng": 77.2085,
+        "address": "Cafeteria, SAU Campus"
+      },
+      "status": "offline",
+      "currentPassengers": 0,
+      "totalTripsToday": 0,
+      "lastUpdated": "2024-01-15T12:00:00Z",
+      "isEcoFriendly": true,
+      "batteryLevel": 45
+    },
+    {
+      "id": "v4",
+      "vehicleNumber": "SAU-004",
+      "driver": {
+        "id": "d4",
+        "name": "Suresh Patel",
+        "phone": "+91 98765 43213",
+        "photo": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
+        "rating": 4,
+        "totalTrips": 720,
+        "isActive": true
+      },
+      "capacity": 4,
+      "currentLocation": {
+        "lat": 28.6135,
+        "lng": 77.21,
+        "address": "Academic Block, SAU Campus"
+      },
+      "status": "waiting",
+      "currentPassengers": 1,
+      "totalTripsToday": 4,
+      "lastUpdated": "2024-01-15T13:00:00Z",
+      "isEcoFriendly": true,
+      "batteryLevel": 78
+    },
+    {
+      "id": "v5",
+      "vehicleNumber": "SAU-005",
+      "driver": {
+        "id": "d5",
+        "name": "Meera Reddy",
+        "phone": "+91 98765 43214",
+        "photo": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+        "rating": 4.6,
+        "totalTrips": 1100,
+        "isActive": true
+      },
+      "capacity": 4,
+      "currentLocation": {
+        "lat": 28.6142,
+        "lng": 77.2088,
+        "address": "Hostel Area, SAU Campus"
+      },
+      "status": "waiting",
+      "currentPassengers": 0,
+      "totalTripsToday": 7,
+      "lastUpdated": "2024-01-15T16:00:00Z",
+      "isEcoFriendly": true,
+      "batteryLevel": 88
+    }
+  ],
+  "students": [
+    {
+      "id": "s1",
+      "name": "Arjun Mehta",
+      "email": "arjun.mehta@sau.ac.in",
+      "phone": "+91 98765 43215",
+      "studentId": "SAU2023001",
+      "department": "Computer Science",
+      "year": 2
+    },
+    {
+      "id": "s2",
+      "name": "Priya Gupta",
+      "email": "priya.gupta@sau.ac.in",
+      "phone": "+91 98765 43216",
+      "studentId": "SAU2023002",
+      "department": "Economics",
+      "year": 1
+    }
+  ],
+  "trips": [
+    {
+      "id": "t1",
+      "vehicleId": "v1",
+      "driverId": "d1",
+      "studentId": "s1",
+      "startLocation": "Main Gate, SAU Campus",
+      "endLocation": "Main Road (2km away)",
+      "startTime": "2024-01-15T14:30:00Z",
+      "endTime": "2024-01-15T14:45:00Z",
+      "status": "completed",
+      "rating": 5,
+      "feedback": "Great service, very punctual!"
+    },
+    {
+      "id": "t2",
+      "vehicleId": "v2",
+      "driverId": "d2",
+      "studentId": "s2",
+      "startLocation": "Library Building, SAU Campus",
+      "endLocation": "Main Road (2km away)",
+      "startTime": "2024-01-15T15:00:00Z",
+      "endTime": null,
+      "status": "in-progress",
+      "rating": null,
+      "feedback": null
+    }
+  ],
+  "feedback": [
+    {
+      "id": "f1",
+      "tripId": "t1",
+      "vehicleId": "v1",
+      "driverId": "d1",
+      "studentId": "s1",
+      "rating": 5,
+      "comment": "Excellent service! Driver was very professional and the ride was smooth.",
+      "createdAt": "2024-01-15T14:50:00Z"
+    },
+    {
+      "id": "f2",
+      "tripId": "t2",
+      "vehicleId": "v2",
+      "driverId": "d2",
+      "studentId": "s2",
+      "rating": 4,
+      "comment": "Good service, but could be a bit more punctual.",
+      "createdAt": "2024-01-15T13:30:00Z"
+    }
+  ]
+}

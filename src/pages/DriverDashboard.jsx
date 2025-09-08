@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../stores/authStore'
-import { mockVehicles, mockTrips } from '../data/mockData'
+import { useVehicles, useTrips, useUpdateVehicleStatus } from '../api/hooks'
 import { 
   Car, 
   MapPin, 
@@ -23,6 +23,9 @@ import toast from 'react-hot-toast'
 
 const DriverDashboard = () => {
   const { user } = useAuthStore()
+  const vehiclesQuery = useVehicles()
+  const tripsQuery = useTrips()
+  const updateVehicle = useUpdateVehicleStatus()
   const [vehicle, setVehicle] = useState(null)
   const [isOnline, setIsOnline] = useState(false)
   const [currentStatus, setCurrentStatus] = useState('offline')
@@ -37,7 +40,8 @@ const DriverDashboard = () => {
 
   // Find the driver's vehicle
   useEffect(() => {
-    const driverVehicle = mockVehicles.find(v => v.driver.id === user?.id)
+    if (!vehiclesQuery.data || !user?.id) return
+    const driverVehicle = vehiclesQuery.data.find(v => v.driver.id === user.id)
     if (driverVehicle) {
       setVehicle(driverVehicle)
       setCurrentPassengers(driverVehicle.currentPassengers)
@@ -45,7 +49,7 @@ const DriverDashboard = () => {
       setTodayTrips(driverVehicle.totalTripsToday)
       setCurrentLocation(driverVehicle.currentLocation)
     }
-  }, [user])
+  }, [vehiclesQuery.data, user])
 
   // Simulate battery drain and location updates
   useEffect(() => {
@@ -74,6 +78,9 @@ const DriverDashboard = () => {
     setCurrentStatus(status)
     if (status === 'waiting') {
       setCurrentPassengers(0)
+    }
+    if (vehicle) {
+      updateVehicle.mutate({ id: vehicle.id, data: { ...vehicle, status } })
     }
     toast.success(`Status changed to ${status}`)
   }

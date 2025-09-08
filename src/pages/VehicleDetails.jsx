@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-import { mockVehicles, mockTrips, mockFeedback } from '../data/mockData'
+import { useVehicle, useTrips, useFeedback } from '../api/hooks'
 import { 
   Car, 
   MapPin, 
@@ -25,6 +25,9 @@ const VehicleDetails = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const vehicleQuery = useVehicle(id)
+  const tripsQuery = useTrips()
+  const feedbackQuery = useFeedback(id)
   const [vehicle, setVehicle] = useState(null)
   const [trips, setTrips] = useState([])
   const [feedback, setFeedback] = useState([])
@@ -32,19 +35,16 @@ const VehicleDetails = () => {
   const [showFeedbackForm, setShowFeedbackForm] = useState(false)
 
   useEffect(() => {
-    const foundVehicle = mockVehicles.find(v => v.id === id)
-    if (foundVehicle) {
-      setVehicle(foundVehicle)
-      
-      // Get trips for this vehicle
-      const vehicleTrips = mockTrips.filter(t => t.vehicleId === id)
-      setTrips(vehicleTrips)
-      
-      // Get feedback for this vehicle
-      const vehicleFeedback = mockFeedback.filter(f => f.vehicleId === id)
-      setFeedback(vehicleFeedback)
-    }
-  }, [id])
+    if (vehicleQuery.data) setVehicle(vehicleQuery.data)
+  }, [vehicleQuery.data])
+
+  useEffect(() => {
+    if (tripsQuery.data) setTrips(tripsQuery.data.filter(t => t.vehicleId === id))
+  }, [tripsQuery.data, id])
+
+  useEffect(() => {
+    if (feedbackQuery.data) setFeedback(feedbackQuery.data)
+  }, [feedbackQuery.data])
 
   const handleCallDriver = () => {
     toast.success(`Calling ${vehicle?.driver.phone}...`)
