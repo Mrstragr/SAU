@@ -16,6 +16,18 @@ import {
   AlertCircle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
+
+// Fix for default Leaflet icon not showing up
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+});
+
 
 const StudentDashboard = () => {
   const { user } = useAuthStore()
@@ -23,7 +35,7 @@ const StudentDashboard = () => {
   const vehiclesQuery = useVehicles()
   const [vehicles, setVehicles] = useState([])
   const [selectedVehicle, setSelectedVehicle] = useState(null)
-  const [showMap, setShowMap] = useState(false)
+  const [showMap, setShowMap] = useState(true)
 
   // Seed local state from API
   useEffect(() => {
@@ -86,6 +98,8 @@ const StudentDashboard = () => {
         return '⚪'
     }
   }
+
+  const initialPosition = [28.6139, 77.2090]; // Centered on campus
 
   return (
     <div className="space-y-6">
@@ -189,12 +203,25 @@ const StudentDashboard = () => {
         </div>
 
         {showMap ? (
-          <div className="bg-gray-100 rounded-lg p-8 text-center">
-            <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">Interactive map view coming soon!</p>
-            <p className="text-sm text-gray-500 mt-2">
-              This will show real-time vehicle locations on campus map
-            </p>
+          <div className="h-96 w-full bg-gray-100 rounded-lg overflow-hidden">
+            <MapContainer center={initialPosition} zoom={15} scrollWheelZoom={false} className="h-full w-full">
+              <TileLayer
+                attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {activeVehicles.map((vehicle) => (
+                <Marker
+                  key={vehicle.id}
+                  position={[vehicle.currentLocation.lat, vehicle.currentLocation.lng]}
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedVehicle(vehicle);
+                      toast.success(`Vehicle ${vehicle.vehicleNumber} selected!`);
+                    },
+                  }}
+                />
+              ))}
+            </MapContainer>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
