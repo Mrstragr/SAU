@@ -2,21 +2,14 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useVehicle, useTrips, useFeedback } from '../api/hooks'
-import { 
-  Car, 
-  MapPin, 
-  Phone, 
-  Clock, 
-  Users, 
-  Battery, 
+import {
+  Car,
+  MapPin,
+  Phone,
+  Battery,
   Star,
-  Navigation,
-  Calendar,
   MessageCircle,
   ArrowLeft,
-  Heart,
-  ThumbsUp,
-  ThumbsDown,
   Send
 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -172,7 +165,7 @@ const VehicleDetails = () => {
                   </div>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Today's Trips:</span>
+                  <span className="text-gray-600">Today&apos;s Trips:</span>
                   <span className="font-medium">{vehicle.totalTripsToday}</span>
                 </div>
               </div>
@@ -314,7 +307,7 @@ const VehicleDetails = () => {
                 <textarea
                   value={newFeedback.comment}
                   onChange={(e) => setNewFeedback({ ...newFeedback, comment: e.target.value })}
-                  placeholder="Share your experience with this driver..."
+                  placeholder="Share your experience with this driver&hellip;"
                   className="input-field h-20 resize-none"
                 />
               </div>

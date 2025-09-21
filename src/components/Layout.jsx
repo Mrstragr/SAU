@@ -1,14 +1,12 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-import { 
-  Home, 
-  MapPin, 
-  Users, 
-  Settings, 
-  LogOut, 
+import {
+  Home,
+  MapPin,
+  Users,
+  Settings,
+  LogOut,
   User,
-  Phone,
-  Battery,
   Car
 } from 'lucide-react'
 

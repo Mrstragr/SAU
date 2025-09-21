@@ -19,6 +19,7 @@ import {
   Settings,
   MessageCircle
 } from 'lucide-react'
+import { mockTrips } from '../data/mockData'
 import toast from 'react-hot-toast'
 
 const DriverDashboard = () => {
@@ -38,6 +39,25 @@ const DriverDashboard = () => {
     address: 'Main Gate, SAU Campus'
   })
 
+  // Loading and error states
+  if (vehiclesQuery.isLoading || tripsQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center text-gray-600">Loading dashboard data...</div>
+      </div>
+    )
+  }
+
+  if (vehiclesQuery.isError || tripsQuery.isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center text-red-600">
+          Error loading dashboard data. Please try again later.
+        </div>
+      </div>
+    )
+  }
+
   // Find the driver's vehicle
   useEffect(() => {
     if (!vehiclesQuery.data || !user?.id) return
@@ -50,6 +70,31 @@ const DriverDashboard = () => {
       setCurrentLocation(driverVehicle.currentLocation)
     }
   }, [vehiclesQuery.data, user])
+
+  useEffect(() => {
+    if (!user?.id) return
+
+    socket.emit('join_driver', user.id)
+
+    socket.on('status_updated', (data) => {
+      if (data.vehicleId === vehicle?.id) {
+        setCurrentStatus(data.status)
+        toast.success(`Your vehicle status updated to ${data.status}`)
+      }
+    })
+
+    socket.on('location_updated', (data) => {
+      if (data.vehicleId === vehicle?.id) {
+        setCurrentLocation(data.location)
+        toast.success('Your vehicle location updated')
+      }
+    })
+
+    return () => {
+      socket.off('status_updated')
+      socket.off('location_updated')
+    }
+  }, [user, vehicle])
 
   // Simulate battery drain and location updates
   useEffect(() => {
@@ -268,7 +313,7 @@ const DriverDashboard = () => {
               <Calendar className="w-6 h-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Today's Trips</p>
+              <p className="text-sm font-medium text-gray-600">Today&apos;s Trips</p>
               <p className="text-2xl font-bold text-gray-900">{todayTrips}</p>
             </div>
           </div>

@@ -1,24 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../stores/authStore'
 import { useVehicles, useStudents, useTrips } from '../api/hooks'
-import { 
-  Car, 
-  Users, 
-  TrendingUp, 
-  AlertCircle,
-  MapPin,
-  Phone,
+import {
+  Car,
+  Users,
+  TrendingUp,
   Battery,
   Star,
-  Calendar,
   BarChart3,
-  Settings,
   Plus,
   Edit,
   Trash2,
   Eye
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { io } from 'socket.io-client'
+
+const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:4000')
 
 const AdminDashboard = () => {
   const { user } = useAuthStore()
@@ -33,6 +31,50 @@ const AdminDashboard = () => {
   useEffect(() => { if (studentsQuery.data) setStudents(studentsQuery.data) }, [studentsQuery.data])
   useEffect(() => { if (tripsQuery.data) setTrips(tripsQuery.data) }, [tripsQuery.data])
   const [selectedTab, setSelectedTab] = useState('overview')
+
+  useEffect(() => {
+    socket.on('status_updated', (data) => {
+      setVehicles((prevVehicles) => {
+        return prevVehicles.map((v) =>
+          v.id === data.vehicleId ? { ...v, status: data.status } : v
+        )
+      })
+      toast.success(`Vehicle ${data.vehicleId} status updated to ${data.status}`)
+    })
+
+    socket.on('location_updated', (data) => {
+      setVehicles((prevVehicles) => {
+        return prevVehicles.map((v) =>
+          v.id === data.vehicleId ? { ...v, currentLocation: data.location } : v
+        )
+      })
+      toast.success(`Vehicle ${data.vehicleId} location updated`)
+    })
+
+    return () => {
+      socket.off('status_updated')
+      socket.off('location_updated')
+    }
+  }, [])
+
+  // Loading and error states
+  if (vehiclesQuery.isLoading || studentsQuery.isLoading || tripsQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center text-gray-600">Loading dashboard data...</div>
+      </div>
+    )
+  }
+
+  if (vehiclesQuery.isError || studentsQuery.isError || tripsQuery.isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center text-red-600">
+          Error loading dashboard data. Please try again later.
+        </div>
+      </div>
+    )
+  }
 
   // Calculate statistics
   const totalVehicles = vehicles.length

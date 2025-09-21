@@ -7,6 +7,7 @@ import DriverDashboard from './pages/DriverDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import VehicleDetails from './pages/VehicleDetails'
 import Profile from './pages/Profile'
+import NotFound from './pages/NotFound'
 
 function App() {
   const { user, isAuthenticated } = useAuthStore()
@@ -55,6 +56,9 @@ function App() {
           <Route path="vehicle/:id" element={<VehicleDetails />} />
           <Route path="profile" element={<Profile />} />
         </Route>
+
+        {/* 404 Route */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
   )
