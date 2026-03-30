@@ -1,29 +1,16 @@
-# Improvement Plan TODO
+# TODO: SAU Transport RDBMS Migration to PostgreSQL
 
-## Frontend Improvements
-- [ ] Refactor Login.jsx to replace mock data with real API calls for authentication.
-- [ ] Add loading and error states UI in AdminDashboard.jsx and DriverDashboard.jsx for API queries.
-- [ ] Add password visibility toggle feature in Login.jsx form.
-- [ ] Integrate real-time updates in dashboards using Socket.io.
-- [ ] Add unit and integration tests for key components and hooks.
-- [ ] Improve accessibility and responsiveness across the app.
-- [ ] Add PropTypes or migrate to TypeScript for type safety.
-- [ ] Enhance ErrorBoundary.jsx with optional logging service integration.
+## Database Design & Implementation
+- [x] Generate ER Diagram (text-based or Mermaid code)
+- [x] Document Normalization steps to 3NF
+- [x] Generate SQL CREATE TABLE scripts for Users, Vehicles, Trips with constraints
+- [x] Generate Sample Data INSERT statements from mock data
 
-## Backend Improvements
-- [ ] Add validation and error handling middleware in Express server.
-- [ ] Add authentication middleware for protected API routes.
-- [ ] Implement rate limiting to prevent abuse.
-- [ ] Add logging and monitoring for backend errors and requests.
+## Advanced RDBMS Features
+- [x] Generate VIEW for DriverPerformance
+- [x] Generate TRIGGER for updating total_trips on trip completion
+- [x] Generate Transaction pseudocode for Book a Ride operation
 
-## General Improvements
-- [ ] Add or improve documentation for setup, usage, and development.
-- [ ] Consider adding CI/CD pipeline for automated testing and deployment.
-
-## Next Steps
-- Start with refactoring Login.jsx to use real API calls.
-- Add loading and error states in dashboards.
-- Implement password visibility toggle in Login.jsx.
-- Integrate Socket.io real-time updates in dashboards.
-- Proceed with backend middleware improvements.
-- Add tests and accessibility improvements.
+## Security & Backend Integration
+- [x] Generate Security SQL for roles (admin_role, driver_role, student_role)
+- [x] Provide Backend Integration code snippets for src/server.js and routes

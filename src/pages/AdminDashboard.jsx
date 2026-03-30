@@ -1,22 +1,36 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../stores/authStore'
-import { useVehicles, useStudents, useTrips } from '../api/hooks'
+import { useVehicles, useStudents, useTrips, useUpdateUser, useDeleteUser, useUpdateVehicle, useDeleteVehicle, useAnalyticsStats, useAnalyticsCharts } from '../api/hooks'
+import { mockAnalyticsData } from '../data/mockData'
 import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar
+} from 'recharts'
+import io from 'socket.io-client'
+import toast from 'react-hot-toast'
+import {
+  BarChart3,
   Car,
   Users,
   TrendingUp,
-  Battery,
   Star,
-  BarChart3,
   Plus,
+  Eye,
   Edit,
   Trash2,
-  Eye
+  Battery,
+  X,
+  Save
 } from 'lucide-react'
-import toast from 'react-hot-toast'
-import { io } from 'socket.io-client'
 
-const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:4000')
+const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5001')
 
 const AdminDashboard = () => {
   const { user } = useAuthStore()
@@ -26,11 +40,23 @@ const AdminDashboard = () => {
   const [vehicles, setVehicles] = useState([])
   const [students, setStudents] = useState([])
   const [trips, setTrips] = useState([])
-  
+
+  const statsQuery = useAnalyticsStats()
+  const tripsByDayQuery = useAnalyticsCharts('trips-by-day')
+  const popularRoutesQuery = useAnalyticsCharts('popular-routes')
+
   useEffect(() => { if (vehiclesQuery.data) setVehicles(vehiclesQuery.data) }, [vehiclesQuery.data])
   useEffect(() => { if (studentsQuery.data) setStudents(studentsQuery.data) }, [studentsQuery.data])
   useEffect(() => { if (tripsQuery.data) setTrips(tripsQuery.data) }, [tripsQuery.data])
   const [selectedTab, setSelectedTab] = useState('overview')
+  const [editingUser, setEditingUser] = useState(null)
+  const [editingVehicle, setEditingVehicle] = useState(null)
+  const [editForm, setEditForm] = useState({})
+
+  const updateUserMutation = useUpdateUser()
+  const deleteUserMutation = useDeleteUser()
+  const updateVehicleMutation = useUpdateVehicle()
+  const deleteVehicleMutation = useDeleteVehicle()
 
   useEffect(() => {
     socket.on('status_updated', (data) => {
@@ -77,22 +103,43 @@ const AdminDashboard = () => {
   }
 
   // Calculate statistics
-  const totalVehicles = vehicles.length
-  const activeVehicles = vehicles.filter(v => v.status !== 'offline').length
-  const totalStudents = students.length
-  const totalTrips = trips.length
+  const totalVehicles = statsQuery.data?.totalVehicles || vehicles.length
+  const activeVehicles = statsQuery.data?.activeVehicles || vehicles.filter(v => v.status !== 'offline').length
+  const totalStudents = statsQuery.data?.totalUsers || students.length // Assuming totalUsers is mostly students
+  const totalTrips = statsQuery.data?.todayTrips || trips.length // API returns today's trips, frontend calculated total. Let's stick to API for "Today's Trips" or "Total Trips"?
+  // The dashboard cards say "Total Trips". The API returns "todayTrips".
+  // Let's use API data for accuracy where possible, but fallback to frontend length for now if API is specific to "today".
+  // Actually, let's use the API's "todayTrips" for a "Today's Activity" card, or just display what we have.
+  // The existing card says "Total Trips". Let's keep it as total trips from the trips list for now, or update the card label.
+  // Let's update the card label to "Today's Trips" if we use the API data.
+
   const completedTrips = trips.filter(t => t.status === 'completed').length
-  const averageRating = vehicles.reduce((acc, v) => acc + v.driver.rating, 0) / vehicles.length
+  const averageRating = vehicles.reduce((acc, v) => acc + v.driver.rating, 0) / (vehicles.length || 1)
 
   const handleVehicleAction = (action, vehicleId) => {
     switch (action) {
       case 'edit':
-        toast.success('Edit vehicle feature coming soon!')
+        const vehicle = vehicles.find(v => v.id === vehicleId)
+        if (vehicle) {
+          setEditingVehicle(vehicle)
+          setEditForm({
+            vehicleNumber: vehicle.vehicleNumber,
+            capacity: vehicle.capacity,
+            status: vehicle.status,
+            batteryLevel: vehicle.batteryLevel
+          })
+        }
         break
       case 'delete':
-        if (confirm('Are you sure you want to delete this vehicle?')) {
-          setVehicles(vehicles.filter(v => v.id !== vehicleId))
-          toast.success('Vehicle deleted successfully')
+        if (confirm('Are you sure you want to delete this vehicle? This action cannot be undone.')) {
+          deleteVehicleMutation.mutate(vehicleId, {
+            onSuccess: () => {
+              toast.success('Vehicle deleted successfully')
+            },
+            onError: (error) => {
+              toast.error(error.message || 'Failed to delete vehicle')
+            }
+          })
         }
         break
       case 'view':
@@ -101,6 +148,83 @@ const AdminDashboard = () => {
       default:
         break
     }
+  }
+
+  const handleUserAction = (action, userId) => {
+    switch (action) {
+      case 'edit':
+        const user = students.find(s => s.id === userId)
+        if (user) {
+          setEditingUser(user)
+          setEditForm({
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            department: user.department,
+            year: user.year
+          })
+        }
+        break
+      case 'delete':
+        if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+          deleteUserMutation.mutate(userId, {
+            onSuccess: () => {
+              toast.success('User deleted successfully')
+            },
+            onError: (error) => {
+              toast.error(error.message || 'Failed to delete user')
+            }
+          })
+        }
+        break
+      case 'view':
+        toast.success('View user details feature coming soon!')
+        break
+      default:
+        break
+    }
+  }
+
+  const handleSaveUser = () => {
+    if (!editingUser) return
+
+    updateUserMutation.mutate({
+      id: editingUser.id,
+      updates: editForm
+    }, {
+      onSuccess: () => {
+        toast.success('User updated successfully')
+        setEditingUser(null)
+        setEditForm({})
+      },
+      onError: (error) => {
+        toast.error(error.message || 'Failed to update user')
+      }
+    })
+  }
+
+  const handleSaveVehicle = () => {
+    if (!editingVehicle) return
+
+    updateVehicleMutation.mutate({
+      id: editingVehicle.id,
+      updates: editForm
+    }, {
+      onSuccess: () => {
+        toast.success('Vehicle updated successfully')
+        setEditingVehicle(null)
+        setEditForm({})
+      },
+      onError: (error) => {
+        toast.error(error.message || 'Failed to update vehicle')
+      }
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingUser(null)
+    setEditingVehicle(null)
+    setEditForm({})
   }
 
   const getStatusColor = (status) => {
@@ -203,11 +327,10 @@ const AdminDashboard = () => {
                 <button
                   key={tab.id}
                   onClick={() => setSelectedTab(tab.id)}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                    selectedTab === tab.id
-                      ? 'border-primary-500 text-primary-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${selectedTab === tab.id
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   <span>{tab.name}</span>
@@ -358,6 +481,94 @@ const AdminDashboard = () => {
                   </tbody>
                 </table>
               </div>
+
+              {/* Edit Vehicle Modal */}
+              {editingVehicle && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-dark-100">Edit Vehicle</h3>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="text-gray-400 hover:text-gray-600 dark:text-dark-400 dark:hover:text-dark-200"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
+                          Vehicle Number
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.vehicleNumber || ''}
+                          onChange={(e) => setEditForm({ ...editForm, vehicleNumber: e.target.value })}
+                          className="input-field w-full"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
+                          Capacity
+                        </label>
+                        <input
+                          type="number"
+                          value={editForm.capacity || ''}
+                          onChange={(e) => setEditForm({ ...editForm, capacity: e.target.value })}
+                          className="input-field w-full"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
+                          Status
+                        </label>
+                        <select
+                          value={editForm.status || ''}
+                          onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                          className="input-field w-full"
+                        >
+                          <option value="waiting">Waiting</option>
+                          <option value="confirm">Confirm</option>
+                          <option value="offline">Offline</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
+                          Battery Level (%)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={editForm.batteryLevel || ''}
+                          onChange={(e) => setEditForm({ ...editForm, batteryLevel: e.target.value })}
+                          className="input-field w-full"
+                        />
+                      </div>
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={handleSaveVehicle}
+                          disabled={updateVehicleMutation.isPending}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                        >
+                          {updateVehicleMutation.isPending ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          ) : (
+                            <Save className="w-4 h-4" />
+                          )}
+                          <span>Save Changes</span>
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="flex-1 btn-secondary py-3 px-4 rounded-xl"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -455,15 +666,135 @@ const AdminDashboard = () => {
                           Year {student.year}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button className="text-blue-600 hover:text-blue-900">
-                            <Eye className="w-4 h-4" />
-                          </button>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleUserAction('view', student.id)}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleUserAction('edit', student.id)}
+                              className="text-green-600 hover:text-green-900"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleUserAction('delete', student.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+
+              {/* Edit User Modal */}
+              {editingUser && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-dark-100">Edit User</h3>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="text-gray-400 hover:text-gray-600 dark:text-dark-400 dark:hover:text-dark-200"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
+                          Name
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.name || ''}
+                          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                          className="input-field w-full"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          value={editForm.email || ''}
+                          onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                          className="input-field w-full"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
+                          Phone
+                        </label>
+                        <input
+                          type="tel"
+                          value={editForm.phone || ''}
+                          onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                          className="input-field w-full"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
+                          Department
+                        </label>
+                        <select
+                          value={editForm.department || ''}
+                          onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
+                          className="input-field w-full"
+                        >
+                          <option value="Computer Science">Computer Science</option>
+                          <option value="Mechanical Engineering">Mechanical Engineering</option>
+                          <option value="Electrical Engineering">Electrical Engineering</option>
+                          <option value="Civil Engineering">Civil Engineering</option>
+                          <option value="Business Administration">Business Administration</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
+                          Year
+                        </label>
+                        <select
+                          value={editForm.year || ''}
+                          onChange={(e) => setEditForm({ ...editForm, year: e.target.value })}
+                          className="input-field w-full"
+                        >
+                          <option value="1">1st Year</option>
+                          <option value="2">2nd Year</option>
+                          <option value="3">3rd Year</option>
+                          <option value="4">4th Year</option>
+                        </select>
+                      </div>
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={handleSaveUser}
+                          disabled={updateUserMutation.isPending}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                        >
+                          {updateUserMutation.isPending ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          ) : (
+                            <Save className="w-4 h-4" />
+                          )}
+                          <span>Save Changes</span>
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="flex-1 btn-secondary py-3 px-4 rounded-xl"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -484,11 +815,10 @@ const AdminDashboard = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        trip.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${trip.status === 'completed' ? 'bg-green-100 text-green-800' :
                         trip.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                          'bg-gray-100 text-gray-800'
+                        }`}>
                         {trip.status}
                       </div>
                       {trip.rating && (

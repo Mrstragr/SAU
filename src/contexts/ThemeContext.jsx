@@ -11,24 +11,54 @@ export const useTheme = () => {
 }
 
 export const ThemeProvider = ({ children }) => {
-  const [isDark, setIsDark] = useState(() => {
+  const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('theme')
-    return saved ? JSON.parse(saved) : false
+    return saved || 'light'
   })
 
   useEffect(() => {
-    localStorage.setItem('theme', JSON.stringify(isDark))
-    if (isDark) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [isDark])
+    localStorage.setItem('theme', theme)
+    const root = document.documentElement
 
-  const toggleTheme = () => setIsDark(!isDark)
+    // Remove all theme classes
+    root.classList.remove('light', 'dark', 'futuristic')
+
+    // Add current theme class
+    root.classList.add(theme)
+
+    // Handle dark mode for Tailwind
+    if (theme === 'dark' || theme === 'futuristic') {
+      root.classList.add('dark')
+    } else {
+      root.classList.remove('dark')
+    }
+  }, [theme])
+
+  const toggleTheme = () => {
+    setTheme(prev => {
+      if (prev === 'light') return 'dark'
+      if (prev === 'dark') return 'futuristic'
+      return 'light'
+    })
+  }
+
+  const setLightTheme = () => setTheme('light')
+  const setDarkTheme = () => setTheme('dark')
+  const setFuturisticTheme = () => setTheme('futuristic')
+
+  const isDark = theme === 'dark' || theme === 'futuristic'
+  const isFuturistic = theme === 'futuristic'
 
   return (
-    <ThemeContext.Provider value={{ isDark, toggleTheme }}>
+    <ThemeContext.Provider value={{
+      theme,
+      isDark,
+      isFuturistic,
+      toggleTheme,
+      setLightTheme,
+      setDarkTheme,
+      setFuturisticTheme
+    }}>
       {children}
     </ThemeContext.Provider>
   )
