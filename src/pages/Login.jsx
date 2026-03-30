@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useAuthStore } from '../stores/authStore'
-import { mockStudents, mockVehicles } from '../data/mockData'
+import { useRegister, useLogin } from '../api/hooks'
 import {
   Phone,
   Mail,
@@ -14,6 +14,7 @@ import {
   EyeOff
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useUsersStore } from '../stores/usersStore'
 
 const Login = () => {
   const [selectedRole, setSelectedRole] = useState('student')
@@ -22,8 +23,24 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
   const { login } = useAuthStore()
   const navigate = useNavigate()
+  const registerMutation = useRegister()
+  const loginMutation = useLogin()
+  const { findUserByEmailOrPhone } = useUsersStore()
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm()
+  const { register, handleSubmit, formState: { errors }, reset, getValues } = useForm()
+
+  const getPlaceholderText = () => {
+    switch (selectedRole) {
+      case 'student':
+        return 'Enter your email or phone'
+      case 'driver':
+        return 'Enter your phone number'
+      case 'admin':
+        return 'Enter admin email'
+      default:
+        return 'Enter your identifier'
+    }
+  }
 
   const roles = [
     {
@@ -53,192 +70,69 @@ const Login = () => {
     setIsLoading(true)
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
       if (isLoginMode) {
         // Login logic
-        await handleLogin(data)
+        const result = await loginMutation.mutateAsync({
+          identifier: data.identifier,
+          password: data.password
+        })
+        login(result.user, result.token)
+        toast.success(`Welcome back, ${result.user.name}!`)
+
+        // Navigate based on role
+        switch (result.user.role) {
+          case 'student':
+            navigate('/')
+            break
+          case 'driver':
+            navigate('/driver')
+            break
+          case 'admin':
+            navigate('/admin')
+            break
+        }
       } else {
         // Signup logic
-        await handleSignup(data)
+        const signupData = {
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          password: data.password,
+          role: selectedRole,
+          ...(selectedRole === 'student' && {
+            studentId: data.studentId,
+            department: data.department,
+            year: parseInt(data.year)
+          })
+        }
+
+        const result = await registerMutation.mutateAsync(signupData)
+        login(result.user, result.token)
+        toast.success(`Welcome to SAU TRAVEL, ${result.user.name}! Your account has been created.`)
+
+        // Navigate based on role
+        switch (selectedRole) {
+          case 'student':
+            navigate('/')
+            break
+          case 'driver':
+            navigate('/driver')
+            break
+        }
       }
 
     } catch (error) {
-      toast.error(error.message || 'Operation failed. Please try again.')
+      toast.error(error.response?.data?.error || error.message || 'Operation failed. Please try again.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleLogin = async (data) => {
-    let user = null
-    const token = 'mock-jwt-token-' + Date.now()
 
-    // Mock authentication logic
-    switch (selectedRole) {
-      case 'student': {
-        // Find student by email or phone
-        user = mockStudents.find(s =>
-          s.email === data.identifier || s.phone === data.identifier
-        )
-        if (!user) {
-          // Create mock student for demo
-          user = {
-            id: 's-demo',
-            name: data.identifier.includes('@') ? data.identifier.split('@')[0] : 'Demo Student',
-            email: data.identifier.includes('@') ? data.identifier : 'demo@sau.ac.in',
-            phone: data.identifier.includes('+') ? data.identifier : '+91 98765 43215',
-            studentId: 'SAU2023DEMO',
-            department: 'Computer Science',
-            year: 2,
-            role: 'student'
-          }
-        } else {
-          user.role = 'student'
-        }
-        break
-      }
 
-      case 'driver': {
-        // Find driver by phone
-        const vehicle = mockVehicles.find(v => v.driver.phone === data.identifier)
-        if (vehicle) {
-          user = {
-            ...vehicle.driver,
-            role: 'driver',
-            vehicleId: vehicle.id,
-            vehicleNumber: vehicle.vehicleNumber
-          }
-        } else {
-          // Create mock driver for demo
-          user = {
-            id: 'd-demo',
-            name: 'Demo Driver',
-            phone: data.identifier,
-            photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-            rating: 4.5,
-            totalTrips: 1000,
-            isActive: true,
-            role: 'driver',
-            vehicleId: 'v-demo',
-            vehicleNumber: 'SAU-DEMO'
-          }
-        }
-        break
-      }
 
-      case 'admin': {
-        // Admin authentication
-        if (data.identifier === 'admin@sau.ac.in' || data.identifier === 'admin') {
-          user = {
-            id: 'admin-1',
-            name: 'System Administrator',
-            email: 'admin@sau.ac.in',
-            phone: '+91 98765 43200',
-            role: 'admin'
-          }
-        } else {
-          throw new Error('Invalid admin credentials')
-        }
-        break
-      }
 
-      default:
-        throw new Error('Invalid role selected')
-    }
 
-    if (!user) {
-      throw new Error('User not found')
-    }
-
-    login(user, token)
-    toast.success(`Welcome back, ${user.name}!`)
-
-    // Navigate based on role
-    switch (selectedRole) {
-      case 'student':
-        navigate('/')
-        break
-      case 'driver':
-        navigate('/driver')
-        break
-      case 'admin':
-        navigate('/admin')
-        break
-    }
-  }
-
-  const handleSignup = async (data) => {
-    // Mock signup logic
-    const userId = `${selectedRole.charAt(0)}-${Date.now()}`
-    const token = 'mock-jwt-token-' + Date.now()
-
-    let user = null
-
-    switch (selectedRole) {
-      case 'student':
-        user = {
-          id: userId,
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          studentId: `SAU${new Date().getFullYear()}${userId.slice(-4)}`,
-          department: 'Computer Science',
-          year: 1,
-          role: 'student'
-        }
-        break
-
-      case 'driver':
-        user = {
-          id: userId,
-          name: data.name,
-          phone: data.phone,
-          email: data.email,
-          photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-          rating: 0,
-          totalTrips: 0,
-          isActive: false,
-          role: 'driver',
-          vehicleId: null,
-          vehicleNumber: null
-        }
-        break
-
-      case 'admin':
-        throw new Error('Admin signup is not allowed through this interface')
-
-      default:
-        throw new Error('Invalid role selected')
-    }
-
-    login(user, token)
-    toast.success(`Welcome to SAU TRAVEL, ${user.name}! Your account has been created.`)
-
-    // Navigate based on role
-    switch (selectedRole) {
-      case 'student':
-        navigate('/')
-        break
-      case 'driver':
-        navigate('/driver')
-        break
-    }
-  }
-
-  const getPlaceholderText = () => {
-    switch (selectedRole) {
-      case 'student':
-        return 'Enter your email (e.g., student@sau.ac.in) or phone number'
-      case 'driver':
-        return 'Enter your phone number (e.g., +91 98765 43210)'
-      case 'admin':
-        return 'Enter admin email (e.g., admin@sau.ac.in)'
-      default:
-        return 'Enter your identifier'
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -247,15 +141,15 @@ const Login = () => {
           {/* University and App Logos */}
           <div className="flex justify-center items-center space-x-4 mb-6">
             <img
-              src="/sau-logo.png"
+              src="/src/assets/sau-logo.png"
               alt="SAU University Logo"
               className="h-12 w-auto"
             />
             <div className="h-8 w-px bg-gray-300"></div>
             <img
-              src="/sau-travel-logo.png"
+              src="/sau-travel-logo.jpg"
               alt="SAU Travel Logo"
-              className="h-12 w-auto"
+              className="h-16 w-auto"
             />
           </div>
 
@@ -430,6 +324,84 @@ const Login = () => {
                     <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
                   )}
                 </div>
+
+                {selectedRole === 'student' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Student ID
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <GraduationCap className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          {...register('studentId', {
+                            required: 'Student ID is required for students'
+                          })}
+                          type="text"
+                          placeholder="Enter your student ID"
+                          className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                        />
+                      </div>
+                      {errors.studentId && (
+                        <p className="mt-1 text-sm text-red-600">{errors.studentId.message}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Department
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </div>
+                        <input
+                          {...register('department', {
+                            required: 'Department is required for students'
+                          })}
+                          type="text"
+                          placeholder="Enter your department"
+                          className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                        />
+                      </div>
+                      {errors.department && (
+                        <p className="mt-1 text-sm text-red-600">{errors.department.message}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Year
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <select
+                          {...register('year', {
+                            required: 'Year is required for students'
+                          })}
+                          className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                        >
+                          <option value="">Select year</option>
+                          <option value="1">1st Year</option>
+                          <option value="2">2nd Year</option>
+                          <option value="3">3rd Year</option>
+                          <option value="4">4th Year</option>
+                        </select>
+                      </div>
+                      {errors.year && (
+                        <p className="mt-1 text-sm text-red-600">{errors.year.message}</p>
+                      )}
+                    </div>
+                  </>
+                )}
               </>
             )}
 
@@ -453,7 +425,24 @@ const Login = () => {
                       pattern: selectedRole === 'admin' ? {
                         value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                         message: 'Please enter a valid email address'
-                      } : undefined
+                      } : undefined,
+                      validate: (value) => {
+                        if (isLoginMode) {
+                          const user = findUserByEmailOrPhone(value)
+                          if (!user) {
+                            // Check if it's a demo user
+                            const demoUsers = [
+                              'student@sau.ac.in',
+                              'driver@sau.ac.in',
+                              'admin@sau.ac.in'
+                            ]
+                            if (!demoUsers.includes(value)) {
+                              return 'No account found with this email/phone. Please sign up first.'
+                            }
+                          }
+                        }
+                        return true
+                      }
                     })}
                     type={selectedRole === 'admin' ? 'email' : 'text'}
                     placeholder={getPlaceholderText()}
@@ -512,7 +501,7 @@ const Login = () => {
                   <input
                     {...register('confirmPassword', {
                       required: 'Please confirm your password',
-                      validate: (value) => value === watch('password') || 'Passwords do not match'
+                      validate: (value) => value === getValues('password') || 'Passwords do not match'
                     })}
                     type="password"
                     placeholder="Confirm your password"
@@ -527,29 +516,20 @@ const Login = () => {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || registerMutation.isPending || loginMutation.isPending}
               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {isLoading ? (
+              {isLoading || registerMutation.isPending || loginMutation.isPending ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                  Signing in...
+                  {isLoginMode ? 'Signing in...' : 'Creating account...'}
                 </div>
               ) : (
-                'Sign In'
+                isLoginMode ? 'Sign In' : 'Sign Up'
               )}
             </button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Demo Credentials:</h4>
-            <div className="text-xs text-gray-600 space-y-1">
-              <div><strong>Student:</strong> student@sau.ac.in / any password</div>
-              <div><strong>Driver:</strong> +91 98765 43210 / any password</div>
-              <div><strong>Admin:</strong> admin@sau.ac.in / any password</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

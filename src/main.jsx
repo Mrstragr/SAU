@@ -7,6 +7,7 @@ import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import './index.css'
+import 'leaflet/dist/leaflet.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,7 +23,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <BrowserRouter basename="/SAU"> {/* Added basename for production deployment */}
+          <BrowserRouter>
             <App />
             <Toaster
               position="top-right"

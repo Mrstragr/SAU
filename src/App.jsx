@@ -8,6 +8,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import VehicleDetails from './pages/VehicleDetails'
 import Profile from './pages/Profile'
 import NotFound from './pages/NotFound'
+import { NotificationProvider } from './contexts/NotificationContext'
 
 function App() {
   const { user, isAuthenticated } = useAuthStore()
@@ -17,49 +18,51 @@ function App() {
     if (!isAuthenticated) {
       return <Navigate to="/login" replace />
     }
-    
+
     if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
       return <Navigate to="/" replace />
     }
-    
+
     return children
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        
-        <Route path="/" element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }>
-          <Route index element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <StudentDashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="driver" element={
-            <ProtectedRoute allowedRoles={['driver']}>
-              <DriverDashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="admin" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="vehicle/:id" element={<VehicleDetails />} />
-          <Route path="profile" element={<Profile />} />
-        </Route>
+      <NotificationProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
 
-        {/* 404 Route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }>
+            <Route index element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <StudentDashboard />
+              </ProtectedRoute>
+            } />
+
+            <Route path="driver" element={
+              <ProtectedRoute allowedRoles={['driver']}>
+                <DriverDashboard />
+              </ProtectedRoute>
+            } />
+
+            <Route path="admin" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
+
+            <Route path="vehicle/:id" element={<VehicleDetails />} />
+            <Route path="profile" element={<Profile />} />
+          </Route>
+
+          {/* 404 Route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </NotificationProvider>
     </div>
   )
 }

@@ -1,6 +1,32 @@
 // Mock data for the transportation system
 export const mockVehicles = [
   {
+    id: 'demo-v1',
+    vehicleNumber: 'SAU-DEMO',
+    driver: {
+      id: 'demo-driver',
+      name: 'Demo Driver',
+      phone: '+91 98765 43216',
+      photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      rating: 4.5,
+      totalTrips: 50,
+      isActive: true,
+    },
+    capacity: 4,
+    currentLocation: {
+      lat: 28.6139,
+      lng: 77.2090,
+      address: 'Main Gate, SAU Campus'
+    },
+    status: 'offline',
+    currentPassengers: 0,
+    totalTripsToday: 3,
+    lastUpdated: new Date().toISOString(),
+    isEcoFriendly: true,
+    batteryLevel: 90,
+    lastVacantTime: null,
+  },
+  {
     id: 'v1',
     vehicleNumber: 'SAU-001',
     driver: {
@@ -24,6 +50,7 @@ export const mockVehicles = [
     lastUpdated: new Date().toISOString(),
     isEcoFriendly: true,
     batteryLevel: 85,
+    lastVacantTime: new Date(Date.now() - 10 * 60000).toISOString(), // 10 min vacant
   },
   {
     id: 'v2',
@@ -49,6 +76,7 @@ export const mockVehicles = [
     lastUpdated: new Date().toISOString(),
     isEcoFriendly: true,
     batteryLevel: 92,
+    lastVacantTime: new Date(Date.now() - 5 * 60000).toISOString(), // 5 min vacant before
   },
   {
     id: 'v3',
@@ -74,6 +102,7 @@ export const mockVehicles = [
     lastUpdated: new Date().toISOString(),
     isEcoFriendly: true,
     batteryLevel: 45,
+    lastVacantTime: null,
   },
   {
     id: 'v4',
@@ -99,6 +128,7 @@ export const mockVehicles = [
     lastUpdated: new Date().toISOString(),
     isEcoFriendly: true,
     batteryLevel: 78,
+    lastVacantTime: new Date(Date.now() - 20 * 60000).toISOString(), // 20 min vacant
   },
   {
     id: 'v5',
@@ -124,6 +154,60 @@ export const mockVehicles = [
     lastUpdated: new Date().toISOString(),
     isEcoFriendly: true,
     batteryLevel: 88,
+    lastVacantTime: new Date(Date.now() - 15 * 60000).toISOString(), // 15 min vacant
+  },
+  // Additional vehicles for scalability simulation (50-100 users)
+  {
+    id: 'v6',
+    vehicleNumber: 'SAU-006',
+    driver: {
+      id: 'd6',
+      name: 'Vikram Joshi',
+      phone: '+91 98765 43215',
+      photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      rating: 4.3,
+      totalTrips: 890,
+      isActive: true,
+    },
+    capacity: 4,
+    currentLocation: {
+      lat: 28.6130,
+      lng: 77.2092,
+      address: 'Main Gate, SAU Campus'
+    },
+    status: 'confirm',
+    currentPassengers: 4,
+    totalTripsToday: 10,
+    lastUpdated: new Date().toISOString(),
+    isEcoFriendly: true,
+    batteryLevel: 70,
+    lastVacantTime: new Date(Date.now() - 8 * 60000).toISOString(),
+  },
+  {
+    id: 'v7',
+    vehicleNumber: 'SAU-007',
+    driver: {
+      id: 'd7',
+      name: 'Anita Devi',
+      phone: '+91 98765 43216',
+      photo: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+      rating: 4.7,
+      totalTrips: 1340,
+      isActive: true,
+    },
+    capacity: 4,
+    currentLocation: {
+      lat: 28.6148,
+      lng: 77.2098,
+      address: 'Library Building, SAU Campus'
+    },
+    status: 'offline',
+    currentPassengers: 0,
+    totalTripsToday: 3,
+    lastUpdated: new Date().toISOString(),
+    isEcoFriendly: true,
+    batteryLevel: 60,
+    lastVacantTime: null,
   },
 ]
 
@@ -146,6 +230,35 @@ export const mockStudents = [
     department: 'Economics',
     year: 1,
   },
+  // Additional students for scalability (50-100 users)
+  {
+    id: 's3',
+    name: 'Rahul Singh',
+    email: 'rahul.singh@sau.ac.in',
+    phone: '+91 98765 43217',
+    studentId: 'SAU2023003',
+    department: 'International Relations',
+    year: 3,
+  },
+  {
+    id: 's4',
+    name: 'Sneha Patel',
+    email: 'sneha.patel@sau.ac.in',
+    phone: '+91 98765 43218',
+    studentId: 'SAU2023004',
+    department: 'Law',
+    year: 1,
+  },
+  {
+    id: 's5',
+    name: 'Karan Reddy',
+    email: 'karan.reddy@sau.ac.in',
+    phone: '+91 98765 43219',
+    studentId: 'SAU2023005',
+    department: 'Biotechnology',
+    year: 2,
+  },
+  // ... more students can be added for simulation
 ]
 
 export const mockTrips = [
@@ -161,6 +274,7 @@ export const mockTrips = [
     status: 'completed',
     rating: 5,
     feedback: 'Great service, very punctual!',
+    waitTime: 5, // minutes
   },
   {
     id: 't2',
@@ -174,6 +288,137 @@ export const mockTrips = [
     status: 'in-progress',
     rating: null,
     feedback: null,
+    waitTime: 12,
+  },
+  // Additional trips for peak hour simulation (2-4 PM post-class)
+  {
+    id: 't3',
+    vehicleId: 'v4',
+    driverId: 'd4',
+    studentId: 's3',
+    startLocation: 'Academic Block, SAU Campus',
+    endLocation: 'Main Road (2km away)',
+    startTime: '2024-01-15T14:15:00Z',
+    endTime: '2024-01-15T14:30:00Z',
+    status: 'completed',
+    rating: 4,
+    feedback: 'Good, but wait was long during peak.',
+    waitTime: 25,
+  },
+  {
+    id: 't4',
+    vehicleId: 'v5',
+    driverId: 'd5',
+    studentId: 's4',
+    startLocation: 'Hostel Area, SAU Campus',
+    endLocation: 'City Center (5km away)',
+    startTime: '2024-01-15T14:45:00Z',
+    endTime: '2024-01-15T15:00:00Z',
+    status: 'completed',
+    rating: 5,
+    feedback: 'Excellent timing!',
+    waitTime: 3,
+  },
+  {
+    id: 't5',
+    vehicleId: 'v1',
+    driverId: 'd1',
+    studentId: 's5',
+    startLocation: 'Main Gate, SAU Campus',
+    endLocation: 'Railway Station (8km away)',
+    startTime: '2024-01-15T15:10:00Z',
+    endTime: null,
+    status: 'pending',
+    rating: null,
+    feedback: null,
+    waitTime: null,
+  },
+  // More trips for scalability and peak simulation
+  {
+    id: 't6',
+    vehicleId: 'v6',
+    driverId: 'd6',
+    studentId: 's1',
+    startLocation: 'Cafeteria, SAU Campus',
+    endLocation: 'Main Road (2km away)',
+    startTime: '2024-01-15T14:20:00Z',
+    endTime: '2024-01-15T14:35:00Z',
+    status: 'completed',
+    rating: 4.5,
+    feedback: 'Reliable service.',
+    waitTime: 18,
+  },
+  {
+    id: 't7',
+    vehicleId: 'v2',
+    driverId: 'd2',
+    studentId: 's2',
+    startLocation: 'Library Building, SAU Campus',
+    endLocation: 'Shopping Mall (10km away)',
+    startTime: '2024-01-15T15:05:00Z',
+    endTime: null,
+    status: 'in-progress',
+    rating: null,
+    feedback: null,
+    waitTime: 10,
+  },
+  // Simulate peak hour overload (multiple trips around 2-3 PM)
+  {
+    id: 't8',
+    vehicleId: 'v4',
+    driverId: 'd4',
+    studentId: 's3',
+    startLocation: 'Academic Block, SAU Campus',
+    endLocation: 'Main Road (2km away)',
+    startTime: '2024-01-15T14:00:00Z',
+    endTime: '2024-01-15T14:20:00Z',
+    status: 'completed',
+    rating: 3,
+    feedback: 'Long wait during rush hour.',
+    waitTime: 30,
+  },
+  {
+    id: 't9',
+    vehicleId: 'v5',
+    driverId: 'd5',
+    studentId: 's4',
+    startLocation: 'Hostel Area, SAU Campus',
+    endLocation: 'Main Road (2km away)',
+    startTime: '2024-01-15T14:25:00Z',
+    endTime: '2024-01-15T14:40:00Z',
+    status: 'completed',
+    rating: 4,
+    feedback: 'Average wait.',
+    waitTime: 20,
+  },
+  {
+    id: 't10',
+    vehicleId: 'v6',
+    driverId: 'd6',
+    studentId: 's5',
+    startLocation: 'Main Gate, SAU Campus',
+    endLocation: 'City Center (5km away)',
+    startTime: '2024-01-15T14:35:00Z',
+    endTime: '2024-01-15T14:50:00Z',
+    status: 'completed',
+    rating: 5,
+    feedback: 'Quick response.',
+    waitTime: 8,
+  },
+  // Demo pending trip for demo-driver
+  {
+    id: 'demo-t1',
+    vehicleId: 'demo-v1',
+    driverId: 'demo-driver',
+    studentId: 's1',
+    startLocation: 'Library Building, SAU Campus',
+    endLocation: 'Main Road (2km away)',
+    startTime: new Date(Date.now() + 5 * 60000).toISOString(), // 5 min from now
+    endTime: null,
+    status: 'pending',
+    rating: null,
+    feedback: null,
+    waitTime: null,
   },
 ]
 
@@ -187,6 +432,7 @@ export const mockFeedback = [
     rating: 5,
     comment: 'Excellent service! Driver was very professional and the ride was smooth.',
     createdAt: '2024-01-15T14:50:00Z',
+    waitTimeFeedback: 'Wait time was perfect (5 min).',
   },
   {
     id: 'f2',
@@ -197,8 +443,94 @@ export const mockFeedback = [
     rating: 4,
     comment: 'Good service, but could be a bit more punctual.',
     createdAt: '2024-01-15T13:30:00Z',
+    waitTimeFeedback: 'Waited 12 min, acceptable.',
+  },
+  // Additional feedback for analytics
+  {
+    id: 'f3',
+    tripId: 't3',
+    vehicleId: 'v4',
+    driverId: 'd4',
+    studentId: 's3',
+    rating: 4,
+    comment: 'Good, but wait was long during peak.',
+    createdAt: '2024-01-15T14:35:00Z',
+    waitTimeFeedback: '25 min wait - too long for peak hour.',
+  },
+  {
+    id: 'f4',
+    tripId: 't4',
+    vehicleId: 'v5',
+    driverId: 'd5',
+    studentId: 's4',
+    rating: 5,
+    comment: 'Excellent timing!',
+    createdAt: '2024-01-15T15:05:00Z',
+    waitTimeFeedback: 'Only 3 min wait - great!',
+  },
+  {
+    id: 'f5',
+    tripId: 't6',
+    vehicleId: 'v6',
+    driverId: 'd6',
+    studentId: 's1',
+    rating: 4.5,
+    comment: 'Reliable service.',
+    createdAt: '2024-01-15T14:40:00Z',
+    waitTimeFeedback: '18 min wait during rush.',
+  },
+  {
+    id: 'f6',
+    tripId: 't8',
+    vehicleId: 'v4',
+    driverId: 'd4',
+    studentId: 's3',
+    rating: 3,
+    comment: 'Long wait during rush hour.',
+    createdAt: '2024-01-15T14:25:00Z',
+    waitTimeFeedback: '30 min - need more vehicles in peak.',
   },
 ]
+
+export const mockAnalyticsData = {
+  // Hourly bookings for peak analysis (2-4 PM high)
+  hourlyBookings: [
+    { hour: 8, bookings: 2 },
+    { hour: 9, bookings: 3 },
+    { hour: 10, bookings: 5 },
+    { hour: 11, bookings: 4 },
+    { hour: 12, bookings: 6 },
+    { hour: 13, bookings: 8 },
+    { hour: 14, bookings: 25 }, // Peak post-class
+    { hour: 15, bookings: 30 }, // Peak
+    { hour: 16, bookings: 20 },
+    { hour: 17, bookings: 12 },
+    { hour: 18, bookings: 10 },
+    { hour: 19, bookings: 7 },
+    { hour: 20, bookings: 5 },
+    { hour: 21, bookings: 3 },
+    { hour: 22, bookings: 1 },
+  ],
+  avgWaitTimes: [
+    { period: 'Morning', avgWait: 8 },
+    { period: 'Afternoon', avgWait: 15 },
+    { period: 'Peak (2-4 PM)', avgWait: 25 },
+    { period: 'Evening', avgWait: 10 },
+  ],
+  utilization: {
+    totalVehicles: 7,
+    activeVehicles: 5,
+    totalStudents: 50,
+    dailyTrips: 120,
+    avgUtilization: 75, // %
+  },
+  routeEfficiency: [
+    { route: 'Main Gate → Main Road', trips: 45, avgTime: 15, efficiency: 90 },
+    { route: 'Academic Block → Main Road', trips: 30, avgTime: 12, efficiency: 85 },
+    { route: 'Hostel → City Center', trips: 20, avgTime: 25, efficiency: 80 },
+    { route: 'Library → Railway', trips: 15, avgTime: 30, efficiency: 75 },
+  ],
+}
 
 // Campus locations for reference
 export const campusLocations = [
@@ -237,5 +569,11 @@ export const campusLocations = [
     lat: 28.6120,
     lng: 77.2070,
     description: 'Main road outside campus (2km from main gate)'
+  },
+  {
+    name: 'Satbari',
+    lat: 28.5000,
+    lng: 77.1500,
+    description: 'Satbari location (approx 10km from campus)'
   },
 ]

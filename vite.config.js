@@ -1,8 +1,40 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      manifest: {
+        name: 'SAU Travel - Eco-Rickshaw Service',
+        short_name: 'SAU Travel',
+        description: 'Real-time eco-rickshaw tracking and booking for South Asian University',
+        theme_color: '#10b981',
+        background_color: '#ffffff',
+        display: 'standalone',
+        scope: '/',
+        start_url: '/',
+        icons: [
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          }
+        ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+      }
+    })
+  ],
   server: {
     port: 3000,
     open: true
@@ -10,6 +42,5 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true
-  },
-  base: '/SAU/'
+  }
 })
