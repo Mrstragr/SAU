@@ -8,34 +8,12 @@ export const useVehicles = () => {
     queryKey: ['vehicles'],
     queryFn: async () => {
       const { data } = await apiClient.get('/vehicles')
-      // Transform API data to match frontend structure
       return data.map(v => ({
-        id: v.id,
-        vehicleNumber: v.vehicle_number,
-        driver: {
-          id: v.driver_id,
-          name: v.driver_name,
-          email: v.driver_email,
-          phone: '+91 98765 43210', // Mock phone if not in API
-          rating: 4.5 // Mock rating
-        },
-        capacity: v.capacity,
-        batteryLevel: v.battery_level,
-        status: v.current_status,
-        currentPassengers: v.current_passengers,
-        currentLocation: {
-          lat: v.current_lat,
-          lng: v.current_lng,
-          address: v.current_address
-        },
-        // Keep flat props for MapComponent compatibility
-        current_lat: v.current_lat,
-        current_lng: v.current_lng,
-        current_address: v.current_address,
-
-        totalTripsToday: 5, // Mock
-        lastUpdated: v.updated_at,
-        isEcoFriendly: !!v.is_eco_friendly
+        ...v,
+        // Ensure consistent structure for MapComponent
+        current_lat: v.currentLocation?.lat,
+        current_lng: v.currentLocation?.lng,
+        current_address: v.currentLocation?.address,
       }))
     }
   })
@@ -44,18 +22,20 @@ export const useVehicles = () => {
 export const useVehicle = (id) => {
   return useQuery({
     queryKey: ['vehicle', id],
-    queryFn: () => Promise.resolve(mockVehicles.find(v => v.id === parseInt(id))),
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/vehicles/${id}`)
+      return data
+    },
     enabled: !!id
   })
 }
 
 export const useStudents = () => {
-  const { registeredUsers } = useUsersStore()
   return useQuery({
     queryKey: ['students'],
-    queryFn: () => {
-      const registeredStudents = registeredUsers.filter(u => u.role === 'student')
-      return Promise.resolve([...registeredStudents, ...mockStudents])
+    queryFn: async () => {
+      const { data } = await apiClient.get('/users?role=student')
+      return data
     }
   })
 }
@@ -65,23 +45,7 @@ export const useTrips = () => {
     queryKey: ['trips'],
     queryFn: async () => {
       const { data } = await apiClient.get('/trips')
-      return data.map(t => ({
-        id: t.id,
-        vehicleId: t.vehicleId, // API currently returns camelCase for trips based on my previous curl check?
-        // Wait, curl output for trips was: [{"id":1,"vehicleId":1,...}]
-        // Yes, the SQLite Trip model returns camelCase because I wrote it that way in Trip.cjs?
-        // Let's verify Trip.cjs.
-        // Actually, let's just pass data through if it matches, or map if needed.
-        // Assuming API returns camelCase as seen in curl output.
-        ...t,
-        driverId: t.driverId,
-        studentId: t.studentId,
-        startLocation: t.startLocation,
-        endLocation: t.endLocation,
-        startTime: t.startTime,
-        endTime: t.endTime,
-        status: t.status
-      }))
+      return data
     }
   })
 }
@@ -163,40 +127,13 @@ export const useAddFeedback = () => {
 
 export const useLogin = () => {
   const qc = useQueryClient()
-  const { findUser } = useUsersStore()
   return useMutation({
     mutationFn: async ({ identifier, password }) => {
-      try {
-        // Try real API first
-        const { data } = await apiClient.post('/auth/login', { email: identifier, password })
-        // Store token
-        localStorage.setItem('token', data.token)
-        return data
-      } catch (error) {
-        // Fallback to mock if API fails (optional, but good for demo stability if backend is down)
-        console.warn('API Login failed, trying mock...', error)
-
-        // First check registered users
-        let user = findUser(identifier, password)
-
-        // If not found in registered users, check mock users for demo
-        if (!user) {
-          const mockUsers = [
-            { email: 'student@sau.ac.in', password: 'password', role: 'student', id: 'demo-student', name: 'Demo Student', phone: '+91 98765 43215' },
-            { email: 'driver@sau.ac.in', password: 'password', role: 'driver', id: 'demo-driver', name: 'Demo Driver', phone: '+91 98765 43216' },
-            { email: 'admin@sau.ac.in', password: 'password', role: 'admin', id: 'demo-admin', name: 'Demo Admin', phone: '+91 98765 43217' }
-          ]
-          user = mockUsers.find(u => u.email === identifier && u.password === password)
-        }
-
-        if (user) {
-          return Promise.resolve({ token: 'mock-token-' + Date.now(), user })
-        }
-        throw error
-      }
+      const { data } = await apiClient.post('/auth/login', { identifier, password })
+      localStorage.setItem('accessToken', data.accessToken)
+      return data
     },
     onSuccess: (data) => {
-      // Optionally invalidate or set auth queries
       qc.invalidateQueries({ queryKey: ['auth'] })
     }
   })
@@ -204,30 +141,13 @@ export const useLogin = () => {
 
 export const useRegister = () => {
   const qc = useQueryClient()
-  const { addUser } = useUsersStore()
   return useMutation({
     mutationFn: async (data) => {
-      try {
-        const { data: response } = await apiClient.post('/auth/register', data)
-        localStorage.setItem('token', response.token)
-        return response
-      } catch (error) {
-        console.warn('API Register failed, falling back to mock', error)
-        // Add user to registered users store
-        const userData = {
-          ...data,
-          id: Date.now().toString(),
-          createdAt: new Date().toISOString()
-        }
-        addUser(userData)
-        return Promise.resolve({
-          token: 'mock-token-' + Date.now(),
-          user: userData
-        })
-      }
+      const { data: response } = await apiClient.post('/auth/register', data)
+      localStorage.setItem('accessToken', response.accessToken)
+      return response
     },
     onSuccess: (data) => {
-      // Optionally invalidate or set auth queries
       qc.invalidateQueries({ queryKey: ['auth'] })
       qc.invalidateQueries({ queryKey: ['vehicles'] })
       qc.invalidateQueries({ queryKey: ['trips'] })
@@ -363,3 +283,5 @@ export const useAnalyticsCharts = (type) => {
     }
   })
 }
+
+

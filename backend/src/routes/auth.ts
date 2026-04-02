@@ -13,11 +13,15 @@ const registerSchema = z.object({
   password: z.string().min(8),
   name: z.string().min(1),
   role: z.enum(['student', 'driver']).default('student'),
-  phone: z.string().min(6).optional()
+  phone: z.string().min(6).optional(),
+  studentId: z.string().optional(),
+  department: z.string().optional(),
+  year: z.number().optional(),
+  licenseNo: z.string().optional()
 })
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  identifier: z.string().min(1),
   password: z.string().min(1)
 })
 
@@ -29,7 +33,7 @@ function setRefreshCookie(res: any, token: string) {
   res.cookie('refresh_token', token, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: env.COOKIE_SECURE,
+    secure: env.COOKIE_SECURE === 'true',
     path: '/api/auth/refresh'
   })
 }
@@ -37,17 +41,39 @@ function setRefreshCookie(res: any, token: string) {
 router.post('/register', async (req, res) => {
   const body = registerSchema.parse(req.body)
 
-  const existing = await prisma.user.findUnique({ where: { email: body.email } })
-  if (existing) return res.status(409).json({ error: 'Email already in use' })
+  const existing = await prisma.user.findFirst({ 
+    where: { 
+      OR: [
+        { email: body.email },
+        ...(body.phone ? [{ phone: body.phone }] : [])
+      ]
+    } 
+  })
+  if (existing) return res.status(409).json({ error: 'Email or phone already in use' })
 
   const passwordHash = await hashPassword(body.password)
+  
   const user = await prisma.user.create({
     data: {
       email: body.email,
       phone: body.phone,
       name: body.name,
       role: body.role,
-      passwordHash
+      passwordHash,
+      ...(body.role === 'student' ? {
+        studentProfile: {
+          create: {
+            studentNo: body.studentId,
+            department: body.department
+          }
+        }
+      } : body.role === 'driver' ? {
+        driverProfile: {
+          create: {
+            licenseNo: body.licenseNo
+          }
+        }
+      } : {})
     },
     select: { id: true, email: true, name: true, role: true }
   })
@@ -69,7 +95,14 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   const body = loginSchema.parse(req.body)
 
-  const user = await prisma.user.findUnique({ where: { email: body.email } })
+  const user = await prisma.user.findFirst({ 
+    where: { 
+      OR: [
+        { email: body.identifier },
+        { phone: body.identifier }
+      ]
+    } 
+  })
   if (!user) return res.status(401).json({ error: 'Invalid credentials' })
   if (user.status !== 'active') return res.status(403).json({ error: 'User is not active' })
 
