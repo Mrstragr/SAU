@@ -3,8 +3,130 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id               String          @id @default(uuid())
+  email            String          @unique
+  phone            String?         @unique
+  passwordHash     String
+  name             String
+  role             UserRole
+  status           String          @default("active")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  driverProfile    DriverProfile?
+  refreshTokens    RefreshToken[]
+  studentProfile   StudentProfile?
+  driverTrips      Trip[]          @relation("TripDriver")
+  studentTrips     Trip[]          @relation("TripStudent")
+  assignedVehicles Vehicle[]       @relation("VehicleAssignedDriver")
+}
+
+model DriverProfile {
+  userId      String  @id
+  licenseNo   String?
+  ratingAvg   Float   @default(0)
+  ratingCount Int     @default(0)
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model StudentProfile {
+  userId     String  @id
+  studentNo  String? @unique
+  department String?
+  hostel     String?
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Vehicle {
+  id               String            @id @default(uuid())
+  vehicleNumber    String            @unique
+  capacity         Int
+  status           VehicleStatus     @default(offline)
+  batteryLevel     Int               @default(100)
+  assignedDriverId String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  trips            Trip[]
+  assignedDriver   User?             @relation("VehicleAssignedDriver", fields: [assignedDriverId], references: [id])
+  locations        VehicleLocation[]
+}
+
+model VehicleLocation {
+  id         BigInt   @id
+  vehicleId  String
+  lat        Float
+  lng        Float
+  addressTxt String?
+  recordedAt DateTime @default(now())
+  vehicle    Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, recordedAt(sort: Desc)])
+}
+
+model Trip {
+  id           String      @id @default(uuid())
+  studentId    String
+  vehicleId    String?
+  driverId     String?
+  startLat     Float
+  startLng     Float
+  startAddress String?
+  endLat       Float
+  endLng       Float
+  endAddress   String?
+  status       TripStatus  @default(requested)
+  requestedAt  DateTime    @default(now())
+  acceptedAt   DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  cancelledAt  DateTime?
+  otpCode      String?
+  feedback     Feedback?
+  driver       User?       @relation("TripDriver", fields: [driverId], references: [id])
+  vehicle      Vehicle?    @relation(fields: [vehicleId], references: [id])
+  student      User        @relation("TripStudent", fields: [studentId], references: [id])
+  events       TripEvent[]
+
+  @@index([studentId, requestedAt(sort: Desc)])
+  @@index([driverId, requestedAt(sort: Desc)])
+  @@index([status])
+}
+
+model TripEvent {
+  id        BigInt   @id
+  tripId    String
+  type      String
+  payload   Json?
+  createdAt DateTime @default(now())
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId, createdAt(sort: Desc)])
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  tripId    String   @unique
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 enum UserRole {
@@ -29,138 +151,3 @@ enum TripStatus {
   cancelled
   no_show
 }
-
-model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  phone        String?   @unique
-  passwordHash String
-  name         String
-  role         UserRole
-  status       String    @default("active")
-
-  driverProfile  DriverProfile?
-  studentProfile StudentProfile?
-
-  assignedVehicles Vehicle[] @relation("VehicleAssignedDriver")
-
-  studentTrips Trip[] @relation("TripStudent")
-  driverTrips  Trip[] @relation("TripDriver")
-
-  refreshTokens RefreshToken[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model DriverProfile {
-  userId      String @id
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  licenseNo   String?
-  ratingAvg   Float  @default(0)
-  ratingCount Int    @default(0)
-}
-
-model StudentProfile {
-  userId     String @id
-  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  studentNo  String? @unique
-  department String?
-  hostel     String?
-}
-
-model Vehicle {
-  id            String        @id @default(uuid())
-  vehicleNumber String        @unique
-  capacity      Int
-  status        VehicleStatus @default(offline)
-  batteryLevel  Int           @default(100)
-
-  assignedDriverId String?
-  assignedDriver   User?   @relation("VehicleAssignedDriver", fields: [assignedDriverId], references: [id], onDelete: SetNull)
-
-  locations VehicleLocation[]
-  trips      Trip[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model VehicleLocation {
-  id         BigInt   @id @default(autoincrement())
-  vehicleId  String
-  vehicle    Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  lat        Float
-  lng        Float
-  addressTxt String?
-  recordedAt DateTime @default(now())
-
-  @@index([vehicleId, recordedAt(sort: Desc)])
-}
-
-model Trip {
-  id           String     @id @default(uuid())
-  studentId    String
-  student      User       @relation("TripStudent", fields: [studentId], references: [id], onDelete: Restrict)
-  vehicleId    String?
-  vehicle      Vehicle?   @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
-  driverId     String?
-  driver       User?      @relation("TripDriver", fields: [driverId], references: [id], onDelete: SetNull)
-
-  startLat     Float
-  startLng     Float
-  startAddress String?
-  endLat       Float
-  endLng       Float
-  endAddress   String?
-
-  status      TripStatus @default(requested)
-  requestedAt DateTime   @default(now())
-  acceptedAt  DateTime?
-  startedAt   DateTime?
-  completedAt DateTime?
-  cancelledAt DateTime?
-
-  otpCode String?
-
-  events   TripEvent[]
-  feedback Feedback?
-
-  @@index([studentId, requestedAt(sort: Desc)])
-  @@index([driverId, requestedAt(sort: Desc)])
-  @@index([status])
-}
-
-model TripEvent {
-  id        BigInt   @id @default(autoincrement())
-  tripId    String
-  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  type      String
-  payload   Json?
-  createdAt DateTime @default(now())
-
-  @@index([tripId, createdAt(sort: Desc)])
-}
-
-model Feedback {
-  id        String   @id @default(uuid())
-  tripId    String   @unique
-  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  rating    Int
-  comment   String?
-  createdAt DateTime @default(now())
-}
-
-model RefreshToken {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String
-  expiresAt DateTime
-  revokedAt DateTime?
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([expiresAt])
-}
-

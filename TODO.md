@@ -1,16 +1,19 @@
-# TODO: SAU Transport RDBMS Migration to PostgreSQL
+# Project TODO
 
-## Database Design & Implementation
-- [x] Generate ER Diagram (text-based or Mermaid code)
-- [x] Document Normalization steps to 3NF
-- [x] Generate SQL CREATE TABLE scripts for Users, Vehicles, Trips with constraints
-- [x] Generate Sample Data INSERT statements from mock data
+## 🔧 Priority Fixes
+1. [✅] Fix auth ZodError (identifier field)
+2. [✅] Prisma config deprecation
+3. [ ] Docker installation/setup
 
-## Advanced RDBMS Features
-- [x] Generate VIEW for DriverPerformance
-- [x] Generate TRIGGER for updating total_trips on trip completion
-- [x] Generate Transaction pseudocode for Book a Ride operation
+## ✨ Features
+1. [ ] Real-time vehicle tracking
+2. [ ] Trip booking flow
+3. [ ] Push notifications
+4. [ ] Admin analytics
+5. [ ] PWA offline
 
-## Security & Backend Integration
-- [x] Generate Security SQL for roles (admin_role, driver_role, student_role)
-- [x] Provide Backend Integration code snippets for src/server.js and routes
+## ✅ Completed
+- Video background login
+- logo5.png header
+- DB seeded
+
