@@ -1,19 +1,24 @@
-# Project TODO
+# SAU Travel - Phase 1: Core Features
 
-## 🔧 Priority Fixes
-1. [✅] Fix auth ZodError (identifier field)
-2. [✅] Prisma config deprecation
-3. [ ] Docker installation/setup
+**Status:** 5/12 ✅
 
-## ✨ Features
-1. [ ] Real-time vehicle tracking
-2. [ ] Trip booking flow
-3. [ ] Push notifications
-4. [ ] Admin analytics
-5. [ ] PWA offline
+## Backend APIs [Current Step]
+- [ ] Vehicles: ?gate=GATE1 filter
+- [ ] Driver status updates
 
-## ✅ Completed
-- Video background login
-- logo5.png header
-- DB seeded
+## Frontend
+- [ ] Student: gate filter dropdown
+- [ ] Driver: duty toggle buttons
 
+## Backend APIs
+- [ ] Vehicles: ?gate=GATE1 filter
+- [ ] Driver status updates
+
+## Frontend
+- [ ] Student: gate filter dropdown
+- [ ] Driver: duty toggle buttons
+
+## Live Tracking
+- [ ] Socket.io location/status updates
+
+npm run prisma:db-push after schema.

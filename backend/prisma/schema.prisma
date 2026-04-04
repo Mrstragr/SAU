@@ -7,6 +7,40 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+enum UserRole {
+  admin
+  driver
+  student
+}
+
+enum VehicleStatus {
+  offline
+  waiting
+  in_trip
+  maintenance
+}
+
+enum TripStatus {
+  requested
+  assigned
+  accepted
+  in_progress
+  completed
+  cancelled
+  no_show
+}
+
+enum Gate {
+  GATE1
+  GATE2
+}
+
+enum DriverDutyStatus {
+  ON_DUTY
+  OFF_DUTY
+  LUNCH
+}
+
 model User {
   id               String          @id @default(uuid())
   email            String          @unique
@@ -47,6 +81,9 @@ model Vehicle {
   capacity         Int
   status           VehicleStatus     @default(offline)
   batteryLevel     Int               @default(100)
+  gate             Gate              @default(GATE1)
+  driverDutyStatus DriverDutyStatus  @default(OFF_DUTY)
+  passengersNeeded Int               @default(0)
   assignedDriverId String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
@@ -56,7 +93,7 @@ model Vehicle {
 }
 
 model VehicleLocation {
-  id         BigInt   @id
+  id         BigInt   @id @default(autoincrement())
   vehicleId  String
   lat        Float
   lng        Float
@@ -72,6 +109,8 @@ model Trip {
   studentId    String
   vehicleId    String?
   driverId     String?
+  pickupGate   Gate
+  dropoffGate  Gate
   startLat     Float
   startLng     Float
   startAddress String?
@@ -97,7 +136,7 @@ model Trip {
 }
 
 model TripEvent {
-  id        BigInt   @id
+  id        BigInt   @id @default(autoincrement())
   tripId    String
   type      String
   payload   Json?
@@ -129,25 +168,3 @@ model RefreshToken {
   @@index([expiresAt])
 }
 
-enum UserRole {
-  admin
-  driver
-  student
-}
-
-enum VehicleStatus {
-  offline
-  waiting
-  in_trip
-  maintenance
-}
-
-enum TripStatus {
-  requested
-  assigned
-  accepted
-  in_progress
-  completed
-  cancelled
-  no_show
-}

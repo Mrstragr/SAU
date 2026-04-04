@@ -7,10 +7,18 @@ const router = Router()
 
 // Admin: CRUD vehicles
 router.get('/', requireAuth, async (req: AuthedRequest, res) => {
+  const { gate } = req.query
+  
+  const where: any = {}
+  if (gate) {
+    where.gate = gate as any
+  }
+  
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
   const vehicles = await prisma.vehicle.findMany({
+    where,
     include: {
       assignedDriver: {
         select: { id: true, name: true, email: true, phone: true }
@@ -26,6 +34,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
       }
     }
   })
+
 
   const mapped = vehicles.map(v => ({
     id: v.id,
