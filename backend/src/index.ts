@@ -14,6 +14,7 @@ import vehiclesRoutes from './routes/vehicles'
 import tripsRoutes from './routes/trips'
 import analyticsRoutes from './routes/analytics'
 import usersRoutes from './routes/users'
+import driversRoutes from './routes/drivers'
 
 const app = express()
 const httpServer = createServer(app)
@@ -67,6 +68,7 @@ app.use('/api/vehicles', vehiclesRoutes)
 app.use('/api/trips', tripsRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/users', usersRoutes)
+app.use('/api/drivers', driversRoutes)
 
 httpServer.listen(env.PORT, () => {
   // eslint-disable-next-line no-console

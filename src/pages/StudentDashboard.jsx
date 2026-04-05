@@ -28,7 +28,8 @@ import MapComponent from '../components/MapComponent'
 const StudentDashboard = () => {
   const { user } = useAuthStore()
   const navigate = useNavigate()
-  const vehiclesQuery = useVehicles()
+  const [selectedGate, setSelectedGate] = useState('')
+  const vehiclesQuery = useVehicles(selectedGate)
   const addTripMutation = useAddTrip()
   const [vehicles, setVehicles] = useState([])
   const [selectedVehicle, setSelectedVehicle] = useState(null)
@@ -130,6 +131,21 @@ const StudentDashboard = () => {
             Book a Trip
           </button>
         </div>
+      </div>
+
+      {/* Gate Filter */}
+      <div className="card">
+        <label htmlFor="gate-filter" className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-2">Filter by Gate</label>
+        <select 
+          id="gate-filter"
+          value={selectedGate} 
+          onChange={(e) => setSelectedGate(e.target.value)}
+          className="w-full p-3 border border-gray-300 dark:border-dark-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-dark-700 dark:text-dark-100"
+        >
+          <option value="">All Gates</option>
+          <option value="GATE1">Gate 1</option>
+          <option value="GATE2">Gate 2</option>
+        </select>
       </div>
 
       {/* Stats Cards */}

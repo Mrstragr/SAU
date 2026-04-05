@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import { apiClient } from '../api/client'
 
 const useAuthStore = create(
   persist(
@@ -8,15 +9,34 @@ const useAuthStore = create(
       isAuthenticated: false,
       token: null,
 
-      login: (userData, token) => {
+      init: async () => {
+        const { token } = get()
+        if (token) {
+          try {
+            apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
+            const { data } = await apiClient.get('/auth/me')
+            set({
+              user: data.user,
+              isAuthenticated: true,
+            })
+          } catch (error) {
+            set({ user: null, isAuthenticated: false, token: null })
+            localStorage.removeItem('auth-storage')
+          }
+        }
+      },
+
+      login: async (userData, token) => {
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
         set({
           user: userData,
           isAuthenticated: true,
-          token: token,
+          token,
         })
       },
 
       logout: () => {
+        delete apiClient.defaults.headers.common['Authorization']
         set({
           user: null,
           isAuthenticated: false,
@@ -32,13 +52,10 @@ const useAuthStore = create(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
-        token: state.token,
-      }),
+      storage: createJSONStorage(() => localStorage),
     }
   )
 )
 
 export { useAuthStore }
+

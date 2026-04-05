@@ -3,11 +3,12 @@ import { mockVehicles, mockStudents, mockTrips, mockFeedback } from '../data/moc
 import { useUsersStore } from '../stores/usersStore'
 import { apiClient } from './client'
 
-export const useVehicles = () => {
+export const useVehicles = (gate) => {
   return useQuery({
-    queryKey: ['vehicles'],
+    queryKey: ['vehicles', gate],
     queryFn: async () => {
-      const { data } = await apiClient.get('/vehicles')
+      const url = gate ? `/vehicles?gate=${gate}` : '/vehicles'
+      const { data } = await apiClient.get(url)
       return data.map(v => ({
         ...v,
         // Ensure consistent structure for MapComponent
@@ -24,7 +25,13 @@ export const useVehicle = (id) => {
     queryKey: ['vehicle', id],
     queryFn: async () => {
       const { data } = await apiClient.get(`/vehicles/${id}`)
-      return data
+      // Transform to match useVehicles structure
+      return {
+        ...data,
+        current_lat: data.currentLocation?.lat,
+        current_lng: data.currentLocation?.lng,
+        current_address: data.currentLocation?.address,
+      }
     },
     enabled: !!id
   })
@@ -62,20 +69,28 @@ export const useUpdateVehicleStatus = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, data }) => {
-      // Transform frontend data to backend expectation
       const payload = {
         status: data.status,
         currentPassengers: data.currentPassengers,
-        currentLocation: data.currentLocation, // Backend expects { lat, lng, address } or flat?
-        // Route vehicles.cjs expects: currentLocation?.lat etc.
-        // So passing nested object is fine if route handles it.
-        // Let's check route again.
-        // Route: currentLocation?.lat
-        // So yes, passing { currentLocation: { lat, ... } } is correct.
-        batteryLevel: data.batteryLevel
+        batteryLevel: data.batteryLevel,
+        driverDutyStatus: data.driverDutyStatus,
+        ...(data.currentLocation && { currentLocation: data.currentLocation })
       }
       const { data: updatedVehicle } = await apiClient.put(`/vehicles/${id}`, payload)
       return updatedVehicle
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['vehicles'] })
+    }
+  })
+}
+
+export const useUpdateDriverDuty = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, driverDutyStatus }) => {
+      const { data } = await apiClient.put(`/drivers/${id}/duty`, { driverDutyStatus })
+      return data
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['vehicles'] })
@@ -130,6 +145,10 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: async ({ identifier, password }) => {
       const { data } = await apiClient.post('/auth/login', { identifier, password })
+      // Validate accessToken before storing
+      if (!data || typeof data.accessToken !== 'string' || data.accessToken.length === 0) {
+        throw new Error('Invalid token received from server')
+      }
       localStorage.setItem('accessToken', data.accessToken)
       return data
     },
@@ -144,6 +163,10 @@ export const useRegister = () => {
   return useMutation({
     mutationFn: async (data) => {
       const { data: response } = await apiClient.post('/auth/register', data)
+      // Validate accessToken before storing
+      if (!response || typeof response.accessToken !== 'string' || response.accessToken.length === 0) {
+        throw new Error('Invalid token received from server')
+      }
       localStorage.setItem('accessToken', response.accessToken)
       return response
     },

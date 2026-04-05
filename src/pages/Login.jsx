@@ -146,7 +146,7 @@ const Login = () => {
             {/* University and App Logos */}
             <div className="flex justify-center items-center space-x-4 mb-6">
               <img
-                src="/src/assets/sau-logo.png"
+                src="/images/sau-logo.png"
                 alt="SAU University Logo"
                 className="h-12 w-auto"
               />
@@ -425,7 +425,7 @@ const Login = () => {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      {selectedRole === 'student' ? (
+                      {selectedRole === 'student' || selectedRole === 'admin' ? (
                         <Mail className="h-5 w-5 text-gray-400" />
                       ) : (
                         <Phone className="h-5 w-5 text-gray-400" />

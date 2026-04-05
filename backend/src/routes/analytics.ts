@@ -5,28 +5,36 @@ import { requireAuth, requireRole } from '../middleware/auth'
 const router = Router()
 
 router.get('/stats', requireAuth, requireRole(['admin']), async (req, res) => {
-  const [totalVehicles, activeVehicles, totalUsers, todayTrips, totalTrips] = await Promise.all([
-    prisma.vehicle.count(),
-    prisma.vehicle.count({ where: { status: { not: 'offline' } } }),
-    prisma.user.count(),
-    prisma.trip.count({
-      where: {
-        requestedAt: {
-          gte: new Date(new Date().setHours(0, 0, 0, 0))
+  try {
+    const now = new Date()
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+    
+    const [totalVehicles, activeVehicles, totalUsers, todayTrips, totalTrips] = await Promise.all([
+      prisma.vehicle.count(),
+      prisma.vehicle.count({ where: { status: { not: 'offline' } } }),
+      prisma.user.count(),
+      prisma.trip.count({
+        where: {
+          requestedAt: {
+            gte: todayUTC
+          }
         }
-      }
-    }),
-    prisma.trip.count()
-  ])
+      }),
+      prisma.trip.count()
+    ])
 
-  return res.json({
-    totalVehicles,
-    activeVehicles,
-    totalUsers,
-    todayTrips,
-    totalTrips,
-    avgRating: 4.5 // Mock for now
-  })
+    return res.json({
+      totalVehicles,
+      activeVehicles,
+      totalUsers,
+      todayTrips,
+      totalTrips,
+      avgRating: 4.5 // Mock for now
+    })
+  } catch (error) {
+    console.error('Error fetching analytics:', error)
+    return res.status(500).json({ error: 'Failed to fetch analytics' })
+  }
 })
 
 router.get('/charts/:type', requireAuth, requireRole(['admin']), async (req, res) => {

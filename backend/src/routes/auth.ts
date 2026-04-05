@@ -39,44 +39,80 @@ function setRefreshCookie(res: any, token: string) {
 }
 
 router.post('/register', async (req, res) => {
-  const body = registerSchema.parse(req.body)
+  try {
+    const body = registerSchema.parse(req.body)
 
-  const existing = await prisma.user.findFirst({ 
-    where: { 
-      OR: [
-        { email: body.email },
-        ...(body.phone ? [{ phone: body.phone }] : [])
-      ]
-    } 
-  })
-  if (existing) return res.status(409).json({ error: 'Email or phone already in use' })
+    const passwordHash = await hashPassword(body.password)
+    
+    const user = await prisma.user.create({
+      data: {
+        email: body.email,
+        phone: body.phone,
+        name: body.name,
+        role: body.role,
+        passwordHash,
+        ...(body.role === 'student' ? {
+          studentProfile: {
+            create: {
+              studentNo: body.studentId || undefined,
+              department: body.department || undefined
+            }
+          }
+        } : body.role === 'driver' ? {
+          driverProfile: {
+            create: {
+              licenseNo: body.licenseNo || undefined
+            }
+          }
+        } : {})
+      },
+      select: { id: true, email: true, name: true, role: true }
+    }).catch((err: any) => {
+      if (err.code === 'P2002') {
+        const field = err.meta?.target?.[0] || 'field'
+        throw new Error(`${field} already in use`)
+      }
+      throw err
+    })
 
-  const passwordHash = await hashPassword(body.password)
-  
-  const user = await prisma.user.create({
-    data: {
-      email: body.email,
-      phone: body.phone,
-      name: body.name,
-      role: body.role,
-      passwordHash,
-      ...(body.role === 'student' ? {
-        studentProfile: {
-          create: {
-            studentNo: body.studentId,
-            department: body.department
-          }
-        }
-      } : body.role === 'driver' ? {
-        driverProfile: {
-          create: {
-            licenseNo: body.licenseNo
-          }
-        }
-      } : {})
-    },
-    select: { id: true, email: true, name: true, role: true }
-  })
+    const accessToken = signAccessToken({ sub: user.id, role: user.role as any })
+    const refreshToken = signRefreshToken({ sub: user.id })
+    const refreshTokenHash = sha256(refreshToken)
+
+    await prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: refreshTokenHash,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      }
+    })
+
+    setRefreshCookie(res, refreshToken)
+    return res.status(201).json({
+      user,
+      accessToken
+    })
+  } catch (error: any) {
+    // Sanitize error messages to avoid leaking internal details
+    if (error.message?.includes('already in use')) {
+      // Extract the conflicting field from error message to provide accurate feedback
+      if (error.message.includes('phone')) {
+        return res.status(409).json({ error: 'Phone already registered' })
+      }
+      if (error.message.includes('email')) {
+        return res.status(409).json({ error: 'Email already registered' })
+      }
+      // Default fallback for other fields
+      return res.status(409).json({ error: 'This value is already registered' })
+    }
+    if (error.name === 'ZodError' || error.errors) {
+      return res.status(400).json({ error: 'Invalid registration input' })
+    }
+    // Log full error server-side but return generic message to client
+    console.error('Register error:', error)
+    return res.status(400).json({ error: 'Registration failed' })
+  }
+})
 
   const accessToken = signAccessToken({ sub: user.id, role: user.role })
   const refreshToken = signRefreshToken({ sub: user.id })

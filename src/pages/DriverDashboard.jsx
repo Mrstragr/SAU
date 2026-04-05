@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../stores/authStore'
-import { useVehicles, useTrips, useUpdateVehicleStatus, useUpdateTripStatus, useAnalyticsCharts } from '../api/hooks'
+import { useVehicles, useTrips, useUpdateVehicleStatus, useUpdateTripStatus, useUpdateDriverDuty, useAnalyticsCharts } from '../api/hooks'
 import { mockStudents } from '../data/mockData'
 import io from 'socket.io-client'
 import {
@@ -42,6 +42,7 @@ const DriverDashboard = () => {
   const vehiclesQuery = useVehicles()
   const tripsQuery = useTrips()
   const updateVehicle = useUpdateVehicleStatus()
+  const updateDriverDuty = useUpdateDriverDuty()
   const updateTripStatus = useUpdateTripStatus()
   const earningsQuery = useAnalyticsCharts('earnings')
   const [vehicle, setVehicle] = useState(null)
@@ -221,9 +222,25 @@ const DriverDashboard = () => {
       }
     }
     if (vehicle) {
-      updateVehicle.mutate({ id: vehicle.id, data: { ...vehicle, status } })
+      updateVehicle.mutate({ id: vehicle.id, data: { status } })
     }
     toast.success(`Status changed to ${status}`)
+  }
+
+  const handleDutyChange = (driverDutyStatus) => {
+    if (vehicle) {
+      updateDriverDuty.mutate({ 
+        id: vehicle.id, 
+        driverDutyStatus 
+      }, {
+        onSuccess: () => {
+          toast.success(`Duty status: ${driverDutyStatus}`)
+        },
+        onError: (error) => {
+          toast.error(`Failed to update duty status: ${error.message || 'Unknown error'}`)
+        }
+      })
+    }
   }
 
   const handlePassengerChange = (change) => {
@@ -362,6 +379,38 @@ const DriverDashboard = () => {
                 </div>
                 <p className="font-medium text-gray-900">Waiting</p>
                 <p className="text-sm text-gray-600">Available for passengers</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => handleDutyChange('OFF_DUTY')}
+              className={`p-4 rounded-lg border-2 transition-all ${vehicle?.driverDutyStatus === 'OFF_DUTY'
+                ? 'border-yellow-500 bg-yellow-50'
+                : 'border-gray-200 hover:border-gray-300'
+                }`}
+            >
+              <div className="text-center">
+                <div className="w-8 h-8 bg-yellow-500 rounded-full mx-auto mb-2 flex items-center justify-center">
+                  <Pause className="w-4 h-4 text-white" />
+                </div>
+                <p className="font-medium text-gray-900">Off Duty</p>
+                <p className="text-sm text-gray-600">Not available</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => handleDutyChange('LUNCH')}
+              className={`p-4 rounded-lg border-2 transition-all ${vehicle?.driverDutyStatus === 'LUNCH'
+                ? 'border-orange-500 bg-orange-50'
+                : 'border-gray-200 hover:border-gray-300'
+                }`}
+            >
+              <div className="text-center">
+                <div className="w-8 h-8 bg-orange-500 rounded-full mx-auto mb-2 flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-white" />
+                </div>
+                <p className="font-medium text-gray-900">Lunch Break</p>
+                <p className="text-sm text-gray-600">Temporary break</p>
               </div>
             </button>
 

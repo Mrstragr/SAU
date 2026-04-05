@@ -2,6 +2,9 @@ import axios from 'axios'
 
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api'
 
+let isRefreshing = false
+let refreshSubscribers = []
+
 export const apiClient = axios.create({
   baseURL,
   withCredentials: true,
@@ -31,15 +34,43 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
+      
+      if (isRefreshing) {
+        // Queue the request to retry after refresh completes
+        return new Promise((resolve, reject) => {
+          refreshSubscribers.push(() => {
+            return apiClient(originalRequest)
+              .then(resolve)
+              .catch(reject)
+          })
+        })
+      }
+      
+      isRefreshing = true
       try {
         const { data } = await axios.post(`${baseURL}/auth/refresh`, {}, { withCredentials: true })
+        
+        // Validate refresh response
+        if (!data || typeof data.accessToken !== 'string' || data.accessToken.length === 0) {
+          localStorage.removeItem('accessToken')
+          return Promise.reject(new Error('Invalid refresh token response'))
+        }
+        
         localStorage.setItem('accessToken', data.accessToken)
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
+        
+        // Retry all queued requests
+        refreshSubscribers.forEach(subscriber => subscriber())
+        refreshSubscribers = []
+        
         return apiClient(originalRequest)
       } catch (refreshError) {
         // Redirect to login or logout user
         localStorage.removeItem('accessToken')
+        refreshSubscribers = []
         return Promise.reject(refreshError)
+      } finally {
+        isRefreshing = false
       }
     }
     return Promise.reject(error)
